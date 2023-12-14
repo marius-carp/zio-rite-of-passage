@@ -3,6 +3,7 @@ package scala.com.frunza.reviewboard.http.controllers
 import com.frunza.reviewboard.domain.data.Company
 import com.frunza.reviewboard.http.controllers.CompanyController
 import com.frunza.reviewboard.http.requests.CreateCompanyRequest
+import com.frunza.reviewboard.services.CompanyService
 import sttp.client3.*
 import sttp.client3.testing.SttpBackendStub
 import sttp.monad.MonadError
@@ -12,14 +13,32 @@ import zio.test.*
 import zio.*
 import zio.json.*
 import sttp.tapir.server.ServerEndpoint
+
 import scala.com.frunza.reviewboard.syntax.*
 
 object CompanyControllerSpec extends ZIOSpecDefault {
 
   private given zioMonadError: MonadError[Task] = new RIOMonadError[Any]
+  private val company = Company(1L, "frunza-company", "Frunza Company", "frunza.com")
+
+  private val serviceStub = new CompanyService {
+    override def create(req: CreateCompanyRequest): Task[Company] = ZIO.succeed(company)
+
+    override def getAll: Task[List[Company]] = ZIO.succeed(List(company))
+
+    override def getById(id: Long): Task[Option[Company]] = ZIO.succeed {
+      if (id == 1) Some (company)
+      else None
+    }
+
+    override def getBySlug(slug: String): Task[Option[Company]] = ZIO.succeed {
+      if (slug == "frunza-company") Some(company)
+      else None
+    }
+  }
 
   private def backendStubZIO(endpointFun: CompanyController => ServerEndpoint[Any, Task]) = for {
-    controller <- CompanyController.makeZio
+    controller <- CompanyController.makeZIO
     backendStub <- ZIO.succeed(TapirStubInterpreter(SttpBackendStub(MonadError[Task]))
       .whenServerEndpointRunLogic(endpointFun(controller))
       .backend()
@@ -54,7 +73,7 @@ object CompanyControllerSpec extends ZIOSpecDefault {
         program.assert { responseBody =>
           responseBody.toOption
             .flatMap(_.fromJson[List[Company]].toOption)
-            .contains(List.empty)
+            .contains(List(company))
         }
       },
 
@@ -69,10 +88,10 @@ object CompanyControllerSpec extends ZIOSpecDefault {
         program.assert { responseBody =>
           responseBody.toOption
             .flatMap(_.fromJson[Company].toOption)
-            .isEmpty
+            .contains(company)
         }
       }
-    )
+    ).provide(ZLayer.succeed(serviceStub))
 
 
 }
