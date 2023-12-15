@@ -1,8 +1,8 @@
 package com.frunza.reviewboard
 
 import com.frunza.reviewboard.http.HttpApi
-import com.frunza.reviewboard.http.controllers.{CompanyController, HealthController}
-import com.frunza.reviewboard.services.CompanyService
+import com.frunza.reviewboard.repositories.{CompanyRepositoryLive, Repository}
+import com.frunza.reviewboard.services.CompanyServiceLive
 import zio.*
 import sttp.tapir.*
 import sttp.tapir.server.ziohttp.{ZioHttpInterpreter, ZioHttpServerOptions}
@@ -23,7 +23,9 @@ object Application extends ZIOAppDefault {
   override def run =
     simpleProgram.provide(
       Server.default,
-      CompanyService.dummyLayer
+      CompanyRepositoryLive.layer,
+      CompanyServiceLive.layer,
+      Repository.dataLayer
     )
 
 }
