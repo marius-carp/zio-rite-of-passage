@@ -21,7 +21,7 @@ trait CompanyEndpoints {
   val getAllEndpoint =
     endpoint
       .tag("companies")
-      .name("getAll")
+      .name("get")
       .description("get all companies listings")
       .in("companies")
       .get
