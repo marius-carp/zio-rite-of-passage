@@ -22,6 +22,8 @@ object CompanyRepositorySpec extends ZIOSpecDefault with RepositorySpec {
     scala.util.Random.alphanumeric.take(8).mkString
   }
 
+  override val initScript: String = "sql/companies.sql"
+
   override def spec: Spec[TestEnvironment with Scope, Any] = {
     suite("CompanyRepositorySpec")(
       test("create a company") {

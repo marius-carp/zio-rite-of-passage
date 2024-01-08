@@ -7,11 +7,12 @@ import javax.sql.DataSource
 
 trait RepositorySpec {
 
+  val initScript: String
 
   private def createContainer(): PostgreSQLContainer[Nothing] = {
     val container: PostgreSQLContainer[Nothing] =
       PostgreSQLContainer("postgres")
-        .withInitScript("sql/companies.sql")
+        .withInitScript(initScript)
     container.start()
 
     container
