@@ -6,7 +6,6 @@ import zio.json.{DeriveJsonCodec, JsonCodec}
 import java.time.Instant
 
 case class CreateReviewRequest(companyId: Long,
-                               userId: Long,
                                management: Int, // 1 - 5
                                culture: Int,
                                salary: Int,
@@ -16,10 +15,10 @@ case class CreateReviewRequest(companyId: Long,
 
 object CreateReviewRequest {
 
-  def toReview(req: CreateReviewRequest): Review = {
+  def toReview(req: CreateReviewRequest, userId: Long): Review = {
     Review(
       id = -1L,
-      companyId = req.companyId, userId = req.userId, management = req.management, culture = req.culture, salary = req.salary, benefits = req.benefits, wouldRecommend = req.wouldRecommend, review = req.review, created = Instant.now(), updated = Instant.now()
+      companyId = req.companyId, userId = userId, management = req.management, culture = req.culture, salary = req.salary, benefits = req.benefits, wouldRecommend = req.wouldRecommend, review = req.review, created = Instant.now(), updated = Instant.now()
     )
   }
 

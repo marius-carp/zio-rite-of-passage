@@ -1,8 +1,8 @@
 package com.frunza.reviewboard
 
 import com.frunza.reviewboard.http.HttpApi
-import com.frunza.reviewboard.repositories.{CompanyRepositoryLive, Repository}
-import com.frunza.reviewboard.services.CompanyServiceLive
+import com.frunza.reviewboard.repositories.{CompanyRepositoryLive, Repository, ReviewRepositoryLive}
+import com.frunza.reviewboard.services.{CompanyServiceLive, ReviewServiceLive}
 import zio.*
 import sttp.tapir.*
 import sttp.tapir.server.ziohttp.{ZioHttpInterpreter, ZioHttpServerOptions}
@@ -24,7 +24,9 @@ object Application extends ZIOAppDefault {
     simpleProgram.provide(
       Server.default,
       CompanyRepositoryLive.layer,
+      ReviewRepositoryLive.layer,
       CompanyServiceLive.layer,
+      ReviewServiceLive.layer,
       Repository.dataLayer
     )
 

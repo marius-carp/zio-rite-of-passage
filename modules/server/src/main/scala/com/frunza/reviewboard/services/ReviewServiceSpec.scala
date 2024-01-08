@@ -55,8 +55,9 @@ object ReviewServiceSpec extends ZIOSpecDefault {
           service <- ZIO.service[ReviewService]
           review <- service.create(
             CreateReviewRequest(
-              companyId = 1L, userId = 1L, management = 5, culture = 5, salary = 5, benefits = 5, wouldRecommend = 10, review = "all good"
-            )
+              companyId = 1L, management = 5, culture = 5, salary = 5, benefits = 5, wouldRecommend = 10, review = "all good"
+            ),
+            1L
           )
         } yield assertTrue(
           review.companyId == goodReview.companyId &&

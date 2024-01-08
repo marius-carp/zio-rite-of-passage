@@ -1,6 +1,6 @@
 package com.frunza.reviewboard.http
 
-import com.frunza.reviewboard.http.controllers.{BaseController, CompanyController, HealthController}
+import com.frunza.reviewboard.http.controllers.{BaseController, CompanyController, HealthController, ReviewController}
 
 object HttpApi {
 
@@ -10,7 +10,8 @@ object HttpApi {
   def makeController = for {
     health <- HealthController.makeZIO
     companies <- CompanyController.makeZIO
-  } yield List(health, companies)
+    reviews <- ReviewController.makeZIO
+  } yield List(health, companies, reviews)
 
   val endpointsZIO = makeController.map(gatherRoutes)
 

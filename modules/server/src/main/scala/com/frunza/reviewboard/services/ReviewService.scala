@@ -7,7 +7,7 @@ import zio.*
 
 trait ReviewService {
 
-  def create(request: CreateReviewRequest): Task[Review]
+  def create(request: CreateReviewRequest, userId: Long): Task[Review]
   def getById(id: Long): Task[Option[Review]]
   def getByCompanyId(companyId: Long): Task[List[Review]]
   def getByUserId(userid: Long): Task[List[Review]]
@@ -18,7 +18,7 @@ trait ReviewService {
 
 class ReviewServiceLive private (repo: ReviewRepository) extends ReviewService {
 
-  override def create(request: CreateReviewRequest): Task[Review] = repo.create(CreateReviewRequest.toReview(request))
+  override def create(request: CreateReviewRequest, userId: Long): Task[Review] = repo.create(CreateReviewRequest.toReview(request, userId))
   override def getById(id: Long): Task[Option[Review]] = repo.getById(id)
   override def getByCompanyId(companyId: Long): Task[List[Review]] = repo.getByCompanyId(companyId)
   override def getByUserId(userId: Long): Task[List[Review]] = repo.getByUserId(userId)
