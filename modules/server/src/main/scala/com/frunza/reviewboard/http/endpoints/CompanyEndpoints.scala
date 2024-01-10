@@ -6,10 +6,10 @@ import com.frunza.reviewboard.domain.data.Company
 import com.frunza.reviewboard.http.requests.CreateCompanyRequest
 import sttp.tapir.generic.auto._
 
-trait CompanyEndpoints {
+trait CompanyEndpoints extends BaseEndpoint {
 
   val createEndpoint =
-    endpoint
+    baseEndpoint
       .tag("companies")
       .name("create")
       .description("create a listing for a company")
@@ -19,7 +19,7 @@ trait CompanyEndpoints {
       .out(jsonBody[Company])
     
   val getAllEndpoint =
-    endpoint
+    baseEndpoint
       .tag("companies")
       .name("get")
       .description("get all companies listings")
@@ -28,7 +28,7 @@ trait CompanyEndpoints {
       .out(jsonBody[List[Company]])
     
   val getByIdEndpoint =
-    endpoint
+    baseEndpoint
       .tag("companies")
       .name("getById")
       .description("get company by its id")

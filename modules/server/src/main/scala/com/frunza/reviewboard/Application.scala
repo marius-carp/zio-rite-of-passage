@@ -23,10 +23,13 @@ object Application extends ZIOAppDefault {
   override def run =
     simpleProgram.provide(
       Server.default,
+      // repos 
       CompanyRepositoryLive.layer,
       ReviewRepositoryLive.layer,
+      //services
       CompanyServiceLive.layer,
       ReviewServiceLive.layer,
+      // other
       Repository.dataLayer
     )
 
