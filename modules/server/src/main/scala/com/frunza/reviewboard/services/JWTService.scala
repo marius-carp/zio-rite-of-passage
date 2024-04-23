@@ -3,8 +3,11 @@ package com.frunza.reviewboard.services
 import com.auth0.jwt.*
 import com.auth0.jwt.JWTVerifier.BaseVerification
 import com.auth0.jwt.algorithms.Algorithm
+import com.frunza.reviewboard.config.{Configs, JWTConfig}
 import com.frunza.reviewboard.domain.data.{User, UserID, UserToken}
+import com.typesafe.config.ConfigFactory
 import zio.*
+import zio.config.typesafe.TypesafeConfig
 
 import java.time.Instant
 
@@ -15,12 +18,10 @@ trait JWTService {
 
 }
 
-class JWTServiceLive (clock: java.time.Clock) extends JWTService {
-  private val SECRET = "secret"
+class JWTServiceLive (jwtConfig: JWTConfig, clock: java.time.Clock) extends JWTService {
   private val ISSUER = "frunza.com"
-  private val TTL = 30 * 24 * 3600
   private val CLAIM_USERNAME = "username"
-  private val algo = Algorithm.HMAC512(SECRET)
+  private val algo = Algorithm.HMAC512(jwtConfig.secret)
   private val verifier: JWTVerifier =
     JWT
       .require(algo)
@@ -30,7 +31,7 @@ class JWTServiceLive (clock: java.time.Clock) extends JWTService {
 
   override def createToken(user: User): Task[UserToken] = for {
     now <- ZIO.attempt(clock.instant())
-    expiration = now.plusSeconds(TTL)
+    expiration = now.plusSeconds(jwtConfig.ttl)
     token <- ZIO.attempt(
       JWT
         .create()
@@ -58,7 +59,11 @@ class JWTServiceLive (clock: java.time.Clock) extends JWTService {
 
 object JWTServiceLive {
   val layer = ZLayer {{
-    Clock.javaClock.map (clock => new JWTServiceLive(clock))
+
+    for {
+      jwtConfig <- ZIO.service[JWTConfig]
+      clock <- Clock.javaClock
+    } yield new JWTServiceLive(jwtConfig, clock)
   }}
 }
 
@@ -72,7 +77,10 @@ object JWTServiceDEmo extends ZIOAppDefault {
     userId <- service.verifyToken(token.token)
     _ <- Console.printLine(userId)
   } yield()
+
+
   
+
   override def run: ZIO[Any with ZIOAppArgs with Scope, Any, Any] =
-    program.provide(JWTServiceLive.layer)
+    program.provide(JWTServiceLive.layer, Configs.makeConfigLayer[JWTConfig]("frunza.jwt"))
 }
