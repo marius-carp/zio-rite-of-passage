@@ -1,6 +1,6 @@
 package com.frunza.reviewboard.services
 
-import com.frunza.reviewboard.domain.data.User
+import com.frunza.reviewboard.domain.data.{User, UserToken}
 import com.frunza.reviewboard.repositories.UserRepository
 import com.frunza.reviewboard.services.UserServiceLive.Hasher
 import zio.*
@@ -14,9 +14,10 @@ trait UserService {
   def registerUser(email: String, password: String): Task[User]
   def verifyPassword(email: String, password: String): Task[Boolean]
 
+  def generateToken(email: String, password: String): Task[Option[UserToken]]
 }
 
-class UserServiceLive private(userRepo: UserRepository) extends UserService {
+class UserServiceLive private(jwtService: JWTService, userRepo: UserRepository) extends UserService {
 
   override def registerUser(email: String, password: String): Task[User] =
     userRepo.create(
@@ -37,11 +38,26 @@ class UserServiceLive private(userRepo: UserRepository) extends UserService {
     } yield result
 
 
+  def generateToken(email: String, password: String): Task[Option[UserToken]] = {
+    for {
+      existingUser <- userRepo
+        .getByEmail(email)
+        .someOrFail(new RuntimeException(s"cannot verify user $email: nonexistant"))
+      verified <- ZIO.attempt(
+        Hasher.validateHash(password, existingUser.hashedPassword)
+      )
+      maybeToken <- jwtService.createToken(existingUser).when(verified)
+    } yield maybeToken
+  }
+
 }
 
 object UserServiceLive {
   val layer = ZLayer {
-    ZIO.service[UserRepository].map(repo => new UserServiceLive(repo))
+    for {
+      jwtService <- ZIO.service[JWTService]
+      repo <- ZIO.service[UserRepository]
+    } yield new UserServiceLive(jwtService, repo)
   }
 
   object Hasher {
@@ -70,13 +86,13 @@ object UserServiceLive {
 
       compareBytes(testHash, validHash)
     }
-    
+
     private def compareBytes(a: Array[Byte], b: Array[Byte]): Boolean = {
       val range = 0 until math.min(a.length, b.length)
       val diff = range.foldLeft(a.length ^ b.length) {
         case (acc, i) => acc | (a(i) ^ b(i))
       }
-      
+
       diff == 0
     }
 
