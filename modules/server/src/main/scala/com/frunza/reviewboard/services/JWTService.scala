@@ -82,5 +82,5 @@ object JWTServiceDEmo extends ZIOAppDefault {
   
 
   override def run: ZIO[Any with ZIOAppArgs with Scope, Any, Any] =
-    program.provide(JWTServiceLive.layer, Configs.makeConfigLayer[JWTConfig]("frunza.jwt"))
+    program.provide(JWTServiceLive.layer, Configs.makeLayer[JWTConfig]("frunza.jwt"))
 }

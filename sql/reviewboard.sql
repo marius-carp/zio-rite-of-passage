@@ -27,3 +27,9 @@ CREATE TABLE IF NOT EXISTS reviews (
     created TIMESTAMP NOT NULL DEFAULT now(),
     updated TIMESTAMP NOT NULL DEFAULT now()
 );
+
+CREATE TABLE IF NOT EXISTS users (
+    id BIGSERIAL PRIMARY KEY,
+    email TEXT NOT NULL,
+    hashed_password TEXT NOT NULL
+);
