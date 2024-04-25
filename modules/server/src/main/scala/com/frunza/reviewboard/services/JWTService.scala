@@ -58,13 +58,14 @@ class JWTServiceLive (jwtConfig: JWTConfig, clock: java.time.Clock) extends JWTS
 }
 
 object JWTServiceLive {
-  val layer = ZLayer {{
-
+  val layer = ZLayer {
     for {
       jwtConfig <- ZIO.service[JWTConfig]
       clock <- Clock.javaClock
     } yield new JWTServiceLive(jwtConfig, clock)
-  }}
+  }
+
+  val configuredLayer = Configs.makeLayer[JWTConfig]("frunza.jwt") >>> layer
 }
 
 object JWTServiceDEmo extends ZIOAppDefault {

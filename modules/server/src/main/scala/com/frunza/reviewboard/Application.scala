@@ -1,9 +1,9 @@
 package com.frunza.reviewboard
 
-import com.frunza.reviewboard.config.{Configs, JWTConfig}
+import com.frunza.reviewboard.config.{Configs, JWTConfig, RecoveryTokensConfig}
 import com.frunza.reviewboard.http.HttpApi
-import com.frunza.reviewboard.repositories.{CompanyRepositoryLive, Repository, ReviewRepositoryLive, UserRepositoryLive}
-import com.frunza.reviewboard.services.{CompanyServiceLive, JWTServiceLive, ReviewServiceLive, UserServiceLive}
+import com.frunza.reviewboard.repositories.{CompanyRepositoryLive, RecoveryTokenRepositoryLive, Repository, ReviewRepositoryLive, UserRepositoryLive}
+import com.frunza.reviewboard.services.{CompanyServiceLive, EmailServiceLive, JWTServiceLive, ReviewServiceLive, UserServiceLive}
 import zio.*
 import sttp.tapir.*
 import sttp.tapir.server.ziohttp.{ZioHttpInterpreter, ZioHttpServerOptions}
@@ -24,17 +24,17 @@ object Application extends ZIOAppDefault {
   override def run =
     simpleProgram.provide(
       Server.default,
-      //conf
-      Configs.makeLayer[JWTConfig]("frunza.jwt"),
-      // repos 
+      // repos
       CompanyRepositoryLive.layer,
       ReviewRepositoryLive.layer,
       UserRepositoryLive.layer,
+      RecoveryTokenRepositoryLive.configuredLayer,
       //services
       CompanyServiceLive.layer,
       ReviewServiceLive.layer,
       UserServiceLive.layer,
-      JWTServiceLive.layer,
+      JWTServiceLive.configuredLayer,
+      EmailServiceLive.layer,
       // other
       Repository.dataLayer
     )

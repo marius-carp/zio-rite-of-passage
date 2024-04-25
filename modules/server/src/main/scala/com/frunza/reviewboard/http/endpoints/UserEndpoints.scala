@@ -1,7 +1,7 @@
 package com.frunza.reviewboard.http.endpoints
 
 import com.frunza.reviewboard.domain.data.UserToken
-import com.frunza.reviewboard.http.requests.{DeleteAccountRequest, LoginRequest, RegisterUserAccount, UpdatePasswordRequest}
+import com.frunza.reviewboard.http.requests.{DeleteAccountRequest, ForgotPasswordRequest, LoginRequest, RecoverPasswordRequest, RegisterUserAccount, UpdatePasswordRequest}
 import com.frunza.reviewboard.http.responses.UserResponse
 import sttp.tapir.*
 import sttp.tapir.json.zio.jsonBody
@@ -49,4 +49,22 @@ trait UserEndpoints extends BaseEndpoint {
       .post
       .in(jsonBody[LoginRequest])
       .out(jsonBody[UserToken])
+
+  val forgotPasswordEndpoint =
+    baseEndpoint
+      .tag("Users")
+      .name("forgot password")
+      .description("Trigger email for password recovery")
+      .in("users" / "forgot")
+      .post
+      .in(jsonBody[ForgotPasswordRequest])
+
+  val revcoverPasswordEndpoint =
+    baseEndpoint
+      .tag("Users")
+      .name("recover password")
+      .description("Set new password based on OTP")
+      .in("users" / "recover")
+      .post
+      .in(jsonBody[RecoverPasswordRequest])
 }

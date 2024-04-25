@@ -1,7 +1,7 @@
 package com.frunza.reviewboard.services
 
 import com.frunza.reviewboard.domain.data.{User, UserToken}
-import com.frunza.reviewboard.repositories.UserRepository
+import com.frunza.reviewboard.repositories.{RecoveryTokensRepository, UserRepository}
 import com.frunza.reviewboard.services.UserServiceLive.Hasher
 import zio.*
 
@@ -17,9 +17,13 @@ trait UserService {
   def deleteUser(email: String, password: String): Task[User]
 
   def generateToken(email: String, password: String): Task[Option[UserToken]]
+
+  def sendPasswordRecoveryToken(email: String): Task[Unit]
+  def recoverPasswordFromToken(email: String, token: String, newPassword: String): Task[Boolean]
+
 }
 
-class UserServiceLive private(jwtService: JWTService, userRepo: UserRepository) extends UserService {
+class UserServiceLive private(jwtService: JWTService, emailService: EmailService, userRepo: UserRepository, tokensRepo: RecoveryTokensRepository) extends UserService {
 
   override def registerUser(email: String, password: String): Task[User] =
     userRepo.create(
@@ -83,6 +87,23 @@ class UserServiceLive private(jwtService: JWTService, userRepo: UserRepository) 
       .when(verify)
       .someOrFail(new RuntimeException(s"could not update password for $email"))
   } yield updatedUser
+
+  override def sendPasswordRecoveryToken(email: String): Task[Unit] = {
+    tokensRepo.getToken(email).flatMap {
+      case Some(token) => emailService.sendPasswordRecoveryEmail(email, token)
+      case None  => ZIO.unit
+    }
+  }
+
+  override def recoverPasswordFromToken(email: String, token: String, newPassword: String): Task[Boolean] =
+    for {
+      existingUser <- userRepo.getByEmail(email).someOrFail(new RuntimeException("Non existent user"))
+      tokenIsValid <- tokensRepo.checkToken(email, token)
+      result <- userRepo
+        .update(existingUser.id, user => user.copy(hashedPassword = UserServiceLive.Hasher.generateHash(newPassword)))
+        .when(tokenIsValid)
+        .map(_.nonEmpty)
+    } yield result
 }
 
 object UserServiceLive {
@@ -90,7 +111,9 @@ object UserServiceLive {
     for {
       jwtService <- ZIO.service[JWTService]
       repo <- ZIO.service[UserRepository]
-    } yield new UserServiceLive(jwtService, repo)
+      emailService <- ZIO.service[EmailService]
+      recoveryTokenRepo <- ZIO.service[RecoveryTokensRepository]
+    } yield new UserServiceLive(jwtService, emailService, repo, recoveryTokenRepo)
   }
 
   object Hasher {

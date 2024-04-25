@@ -44,11 +44,26 @@ class UserController private (userService: UserService, jwtService: JWTService) 
         .either
     }
 
+  val forgotPassword: ServerEndpoint[Any, Task] = forgotPasswordEndpoint
+    .serverLogic { req =>
+      userService.sendPasswordRecoveryToken(req.email).either
+    }
+
+  val recoverPassword: ServerEndpoint[Any, Task] = revcoverPasswordEndpoint
+    .serverLogic { req =>
+      userService.recoverPasswordFromToken(req.email, req.token, req.newPassword)
+        .filterOrFail(b => b)(UnauthorizedException)
+        .unit
+        .either
+    }
+
   override val routes: List[ServerEndpoint[Any, Task]] = List(
     create,
     changePassword,
     delete,
-    login
+    login,
+    forgotPassword,
+    recoverPassword
   )
 }
 
