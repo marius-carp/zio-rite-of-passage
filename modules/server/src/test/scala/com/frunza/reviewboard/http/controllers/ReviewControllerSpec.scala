@@ -1,4 +1,4 @@
-package scala.com.frunza.reviewboard.http.controllers
+package com.frunza.reviewboard.http.controllers
 
 import com.frunza.reviewboard.domain.data.Review
 import com.frunza.reviewboard.http.controllers.ReviewController
@@ -16,7 +16,6 @@ import sttp.tapir.server.ServerEndpoint
 
 import scala.com.frunza.reviewboard.syntax.*
 import java.time.Instant
-import scala.com.frunza.reviewboard.http.controllers.CompanyControllerSpec.serviceStub
 
 object ReviewControllerSpec extends ZIOSpecDefault {
 
