@@ -1,7 +1,7 @@
 package com.frunza.reviewboard.services
 
 import com.frunza.reviewboard.domain.data.{User, UserID, UserToken}
-import com.frunza.reviewboard.repositories.UserRepository
+import com.frunza.reviewboard.repositories.{RecoveryTokensRepository, UserRepository}
 import zio.*
 import zio.test.*
 
@@ -35,6 +35,32 @@ object UserServiceSpec extends ZIOSpecDefault {
       }
     }
   )
+
+  val stubEmailsLayer = {
+    ZLayer.succeed {
+      new EmailService {
+        override def sendEmail(to: String, subject: String, content: String): Task[Unit] = ZIO.unit
+
+        override def sendPasswordRecoveryEmail(to: String, token: String): Task[Unit] = ZIO.unit
+      }
+    }
+  }
+
+  val stubTokensRepositoryLayer = ZLayer.succeed {
+    new RecoveryTokensRepository {
+      val db = collection.mutable.Map[String, String]()
+
+      override def checkToken(email: String, token: String): Task[Boolean] =
+        ZIO.succeed(db.get(email).filter(_ == token).nonEmpty)
+
+      override def getToken(email: String): Task[Option[String]] = ZIO.attempt {
+        val token = util.Random.alphanumeric.take(8).mkString.toUpperCase()
+        db += email -> token
+        
+        Some(token)
+      }
+    }
+  }
 
   val stubJwtLayer = ZLayer.succeed {
     new JWTService:
@@ -102,7 +128,9 @@ object UserServiceSpec extends ZIOSpecDefault {
     ).provide(
       UserServiceLive.layer,
       stubJwtLayer,
-      stubRepoLayer
+      stubRepoLayer,
+      stubEmailsLayer,
+      stubTokensRepositoryLayer
     )
 
 }
