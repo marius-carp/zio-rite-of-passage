@@ -9,7 +9,7 @@ import sttp.tapir.generic.auto._
 trait CompanyEndpoints extends BaseEndpoint {
 
   val createEndpoint =
-    baseEndpoint
+    secureBaseEndpoint
       .tag("companies")
       .name("create")
       .description("create a listing for a company")

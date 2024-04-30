@@ -1,9 +1,9 @@
 package com.frunza.reviewboard.http.controllers
 
-import com.frunza.reviewboard.domain.data.Review
+import com.frunza.reviewboard.domain.data.{Review, User, UserID, UserToken}
 import com.frunza.reviewboard.http.controllers.ReviewController
 import com.frunza.reviewboard.http.requests.CreateReviewRequest
-import com.frunza.reviewboard.services.ReviewService
+import com.frunza.reviewboard.services.{JWTService, ReviewService}
 import sttp.client3.*
 import sttp.client3.testing.SttpBackendStub
 import sttp.monad.MonadError
@@ -56,6 +56,14 @@ object ReviewControllerSpec extends ZIOSpecDefault {
     )
   } yield backendStub
 
+  private val jwtServiceStub = new JWTService {
+    override def createToken(user: User): Task[UserToken] =
+      ZIO.succeed(UserToken(user.email, "Pass", 99999L))
+
+    override def verifyToken(token: String): Task[UserID] =
+      ZIO.succeed(UserID(1, "marius@frunza.com"))
+  }
+
   override def spec: Spec[TestEnvironment with Scope, Any] =
     suite("ReviewControllerSpec")(
       test("post review") {
@@ -64,6 +72,7 @@ object ReviewControllerSpec extends ZIOSpecDefault {
           response <- basicRequest
             .post(uri"reviews")
             .body(CreateReviewRequest(companyId = 1L, management = 5, culture = 5, salary = 5, benefits = 5, wouldRecommend = 10, review = "all good").toJson)
+            .header("Authorization", "Bearer Pass")
             .send(backendStub)
         } yield response.body
 
@@ -101,5 +110,8 @@ object ReviewControllerSpec extends ZIOSpecDefault {
             responseNotFound.body.toOption.flatMap(_.fromJson[List[Review]].toOption).contains(List())
         )
       }
-    ).provide(ZLayer.succeed(serviceStub))
+    ).provide(
+      ZLayer.succeed(serviceStub),
+      ZLayer.succeed(jwtServiceStub)
+    )
 }

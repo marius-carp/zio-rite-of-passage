@@ -1,9 +1,9 @@
 package scala.com.frunza.reviewboard.http.controllers
 
-import com.frunza.reviewboard.domain.data.Company
+import com.frunza.reviewboard.domain.data.{Company, User, UserID, UserToken}
 import com.frunza.reviewboard.http.controllers.CompanyController
 import com.frunza.reviewboard.http.requests.CreateCompanyRequest
-import com.frunza.reviewboard.services.CompanyService
+import com.frunza.reviewboard.services.{CompanyService, JWTService}
 import sttp.client3.*
 import sttp.client3.testing.SttpBackendStub
 import sttp.monad.MonadError
@@ -45,6 +45,14 @@ object CompanyControllerSpec extends ZIOSpecDefault {
     )
   } yield backendStub
 
+  private val jwtServiceStub = new JWTService {
+    override def createToken(user: User): Task[UserToken] =
+      ZIO.succeed(UserToken(user.email, "Pass", 99999L))
+
+    override def verifyToken(token: String): Task[UserID] =
+      ZIO.succeed(UserID(1, "marius@frunza.com"))
+  }
+
   override def spec: Spec[TestEnvironment with Scope, Any] =
     suite("CompanyControllerSpec")(
       test("post company") {
@@ -53,6 +61,7 @@ object CompanyControllerSpec extends ZIOSpecDefault {
           response <- basicRequest
             .post(uri"/companies")
             .body(CreateCompanyRequest("Frunza Company", "frunza.com").toJson)
+            .header("Authorization", "Bearer Pass")
             .send(backendStub)
         } yield response.body
 
@@ -91,7 +100,10 @@ object CompanyControllerSpec extends ZIOSpecDefault {
             .contains(company)
         }
       }
-    ).provide(ZLayer.succeed(serviceStub))
+    ).provide(
+      ZLayer.succeed(serviceStub),
+      ZLayer.succeed(jwtServiceStub)
+    )
 
 
 }

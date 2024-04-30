@@ -1,13 +1,16 @@
 package com.frunza.reviewboard.http.controllers
 
+import com.frunza.reviewboard.domain.data.UserID
 import com.frunza.reviewboard.http.endpoints.ReviewEndpoints
-import com.frunza.reviewboard.services.ReviewService
+import com.frunza.reviewboard.services.{JWTService, ReviewService}
 import sttp.tapir.server.ServerEndpoint
 import zio.*
 
-class ReviewController private (reviewService: ReviewService) extends  BaseController with ReviewEndpoints {
+class ReviewController private (reviewService: ReviewService, jwtService: JWTService) extends  BaseController with ReviewEndpoints {
 
-  val create: ServerEndpoint[Any, Task] = createEndpoint.serverLogic(req => reviewService.create(req, 1L).either)
+  val create: ServerEndpoint[Any, Task] = createEndpoint
+    .serverSecurityLogic[UserID, Task](token => jwtService.verifyToken(token).either)
+    .serverLogic(userId => req   => reviewService.create(req, userId.id).either)
 
   val getById: ServerEndpoint[Any, Task] = getByIdEndpoint.serverLogic(id => reviewService.getById(id).either)
 
@@ -22,5 +25,10 @@ class ReviewController private (reviewService: ReviewService) extends  BaseContr
 }
 
 object ReviewController {
-  val makeZIO = ZIO.service[ReviewService].map(reviewService => new ReviewController(reviewService))
+
+  val makeZIO = for {
+    reviewService <- ZIO.service[ReviewService]
+    jwtService <- ZIO.service[JWTService]
+  } yield new ReviewController(reviewService, jwtService)
+
 }
