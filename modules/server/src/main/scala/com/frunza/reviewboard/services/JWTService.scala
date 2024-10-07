@@ -25,7 +25,7 @@ class JWTServiceLive (jwtConfig: JWTConfig, clock: java.time.Clock) extends JWTS
   private val verifier: JWTVerifier =
     JWT
       .require(algo)
-      .withIssuer("frunza.com")
+      .withIssuer(ISSUER)
       .asInstanceOf[BaseVerification]
       .build(clock)
 
@@ -38,8 +38,8 @@ class JWTServiceLive (jwtConfig: JWTConfig, clock: java.time.Clock) extends JWTS
         .withIssuer(ISSUER)
         .withIssuedAt(now)
         .withExpiresAt(expiration)
-        .withSubject("1")
-        .withClaim(CLAIM_USERNAME, "marius@frunza.com")
+        .withSubject(user.id.toString)
+        .withClaim(CLAIM_USERNAME, user.email)
         .sign(algo)
     )
   } yield UserToken(user.email, token, expiration.getEpochSecond)

@@ -82,7 +82,7 @@ object CompanyRepositorySpec extends ZIOSpecDefault with RepositorySpec {
 
         program.assert(_.isEmpty)
       },
-      test("delete record") {
+      test("get all") {
         val program: ZIO[CompanyRepository, Throwable, (IndexedSeq[Company], List[Company])] = for {
           repo <- ZIO.service[CompanyRepository]
           companies <- ZIO.collectAll((1 to 10).map(_ => repo.create(genCompany)))
